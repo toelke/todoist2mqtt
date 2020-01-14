@@ -4,7 +4,7 @@ A program to publish the activity log of your todoist account to MQTT.
 To run:
 
 ```
-docker run --name todoist2mqtt -e MQTT_BROKER=127.0.0.1 -e MQTT_TOPIC=todoist/activity -e TODOIST_API_KEY=123456789
+docker run -d --restart=unless-stopped --name todoist2mqtt -e MQTT_BROKER=127.0.0.1 -e MQTT_TOPIC=todoist/activity -e TODOIST_API_KEY=123456789 toelke158/todoist2mqtt:latest
 ```
 
 Get the todoist API key from todoist.com/prefs/integrations (at the very bottom).
