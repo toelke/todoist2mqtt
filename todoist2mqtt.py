@@ -40,7 +40,7 @@ mqtt_client = mqtt.Client()
 mqtt_client.loop_start()
 mqtt_client.connect(os.environ.get('MQTT_BROKER', '127.0.0.1'))
 
-logging.basicConfig(level='INFO')
+logging.basicConfig(level='INFO', format='%(asctime)s %(levelname)s:%(name)s:%(message)s')
 logger = logging.getLogger()
 
 
