@@ -17,3 +17,4 @@ Apart from using the environment variable `TODOIST_API_KEY` to set your API key,
 
 * `MQTT_BROKER` to set the MQTT broker (default is 127.0.0.1)
 * `MQTT_TOPIC` to set the MQTT topic (default is "todoist/activity")
+* `SLEEP_TIME` to set how often (approximately) the activity is updated (default is 60). This is in seconds between publishes.

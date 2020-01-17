@@ -64,4 +64,4 @@ while True:
     for event in eg.get_events():
         logger.info('Publishing event %d', event['id'])
         mqtt_client.publish(TOPIC, json.dumps(event), qos=1)
-    time.sleep(10)
+    time.sleep(os.environ.get('SLEEP_TIME', 60))
