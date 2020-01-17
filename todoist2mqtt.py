@@ -32,13 +32,13 @@ import json
 import logging
 import os
 
-TOPIC = os.environ['MQTT_TOPIC']
+TOPIC = os.environ.get('MQTT_TOPIC', 'todoist/activity')
 
 api = todoist.TodoistAPI(os.environ['TODOIST_API_KEY'])
 
 mqtt_client = mqtt.Client()
 mqtt_client.loop_start()
-mqtt_client.connect(os.environ['MQTT_BROKER'])
+mqtt_client.connect(os.environ.get('MQTT_BROKER', '127.0.0.1'))
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger()
