@@ -1,5 +1,7 @@
 # todoist2mqtt
-A program to publish the activity log of your todoist account to MQTT.
+Publish the activity log of your todoist account to MQTT.
+
+This is useful if you want multiple applications to react to activity on your account but want to reduce the load on the servers of Doist.
 
 To run:
 
@@ -18,3 +20,7 @@ Apart from using the environment variable `TODOIST_API_KEY` to set your API key,
 * `MQTT_BROKER` to set the MQTT broker (default is 127.0.0.1)
 * `MQTT_TOPIC` to set the MQTT topic (default is "todoist/activity")
 * `SLEEP_TIME` to set how often (approximately) the activity is updated (default is 60). This is in seconds between publishes.
+
+# Disclaimer
+
+This application is not created by, affiliated with, or supported by Doist.
