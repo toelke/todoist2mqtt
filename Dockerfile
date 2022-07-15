@@ -1,9 +1,9 @@
-FROM python:3
+FROM python:3.10.4
 
-RUN pip install paho-mqtt todoist-python
+RUN pip install --no-cache-dir paho-mqtt todoist-python
 
 WORKDIR /app
-ADD *.py /app
+COPY *.py /app
 
 #ENV MQTT_BROKER
 #ENV MQTT_TOPIC
