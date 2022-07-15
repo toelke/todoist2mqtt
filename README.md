@@ -1,3 +1,5 @@
+[![ci](https://github.com/toelke/todoist2mqtt/actions/workflows/build-docker.yaml/badge.svg?branch=main)](https://github.com/toelke/todoist2mqtt/actions/workflows/build-docker.yaml)
+
 # todoist2mqtt
 Publish the activity log of your todoist account to MQTT.
 
