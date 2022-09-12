@@ -1,4 +1,4 @@
-FROM python:3.10.6
+FROM python:3.10.7
 
 RUN pip install --no-cache-dir paho-mqtt todoist-python
 
