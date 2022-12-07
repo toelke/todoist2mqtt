@@ -9,4 +9,4 @@ COPY *.py /app
 #ENV MQTT_TOPIC
 #ENV TODOIST_API_KEY
 
-CMD python3 todoist2mqtt.py
+CMD ["python3", "/app/todoist2mqtt.py"]
