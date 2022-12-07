@@ -24,17 +24,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-import todoist
 import time
 import shelve
 import paho.mqtt.client as mqtt
 import json
 import logging
 import os
+import requests
 
 TOPIC = os.environ.get('MQTT_TOPIC', 'todoist/activity')
 
-api = todoist.TodoistAPI(os.environ['TODOIST_API_KEY'])
+session = requests.Session()
+session.headers.update({'Authorization': f'Bearer {os.environ["TODOIST_API_KEY"]}'})
 
 mqtt_client = mqtt.Client()
 mqtt_client.loop_start()
@@ -53,7 +54,7 @@ class EventGetter:
         self._logger.info('Loaded last_event %d', self._data['last_event'])
 
     def get_events(self):
-        activity = api.activity.get()
+        activity = session.get('https://api.todoist.com/sync/v9/activity/get').json()
         yield from (x for x in activity['events'][::-1] if x['id'] > self._data['last_event'])
         self._data['last_event'] = activity['events'][0]['id']
         self._logger.info('Emitted events up to %d', self._data['last_event'])
