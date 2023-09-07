@@ -55,7 +55,11 @@ class EventGetter:
 
     def get_events(self):
         activity = session.get('https://api.todoist.com/sync/v9/activity/get').json()
-        yield from (x for x in activity['events'][::-1] if x['id'] > self._data['last_event'])
+        try:
+            yield from (x for x in activity['events'][::-1] if x['id'] > self._data['last_event'])
+        except KeyError:
+            self._logger.exception("Missing key in response: %s", activity)
+            raise
         self._data['last_event'] = activity['events'][0]['id']
         self._logger.info('Emitted events up to %d', self._data['last_event'])
 
