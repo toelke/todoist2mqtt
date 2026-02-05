@@ -1,4 +1,4 @@
-FROM python:3.14.2
+FROM python:3.14.3
 
 RUN pip install --no-cache-dir paho-mqtt requests
 
