@@ -24,49 +24,70 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-import time
-import shelve
-import paho.mqtt.client as mqtt
+import datetime
 import json
 import logging
 import os
+import shelve
+import time
+
+import paho.mqtt.client as mqtt
 import requests
 
-TOPIC = os.environ.get('MQTT_TOPIC', 'todoist/activity')
+TOPIC = os.environ.get("MQTT_TOPIC", "todoist/activity")
 
 session = requests.Session()
-session.headers.update({'Authorization': f'Bearer {os.environ["TODOIST_API_KEY"]}'})
+session.headers.update(
+    {
+        "Authorization": f'Bearer {os.environ["TODOIST_API_KEY"]}',
+    }
+)
 
-mqtt_client = mqtt.Client()
+mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 mqtt_client.loop_start()
-mqtt_client.connect(os.environ.get('MQTT_BROKER', '127.0.0.1'))
+mqtt_client.connect(os.environ.get("MQTT_BROKER", "127.0.0.1"))
 
-logging.basicConfig(level='INFO', format='%(asctime)s %(levelname)s:%(name)s:%(message)s')
+logging.basicConfig(
+    level="INFO",
+    format="%(asctime)s %(levelname)s:%(name)s:%(message)s",
+)
 logger = logging.getLogger()
 
 
 class EventGetter:
     def __init__(self):
-        self._logger = logger.getChild('EventGetter')
-        self._data = shelve.open('eventgetter_shelve')
-        if 'last_event' not in self._data:
-            self._data['last_event'] = -1
-        self._logger.info('Loaded last_event %d', self._data['last_event'])
+        self._logger = logger.getChild("EventGetter")
+        self._data = shelve.open("eventgetter_shelve")
 
     def get_events(self):
-        activity = session.get('https://api.todoist.com/sync/v9/activity/get').json()
+        is_first_start = "last_event_id" not in self._data
+        cutoff = (
+            datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
+            if is_first_start
+            else None
+        )
+        last_seen = self._data.get("last_event_id", -1)
+        activity = session.get("https://api.todoist.com/api/v1/activities").json()
         try:
-            yield from (x for x in activity['events'][::-1] if x['id'] > self._data['last_event'])
+            results = activity["results"]
         except KeyError:
             self._logger.exception("Missing key in response: %s", activity)
             raise
-        self._data['last_event'] = activity['events'][0]['id']
-        self._logger.info('Emitted events up to %d', self._data['last_event'])
+        new_events = [
+            e
+            for e in results[::-1]
+            if e["id"] > last_seen
+            and (cutoff is None or datetime.datetime.fromisoformat(e["event_date"]) >= cutoff)
+        ]
+        yield from new_events
+        if results:
+            self._data["last_event_id"] = results[0]["id"]
+            self._logger.info("Emitted events up to id %s", results[0]["id"])
 
 
 eg = EventGetter()
 while True:
     for event in eg.get_events():
-        logger.info('Publishing event %d', event['id'])
+        logger.info("Publishing event %d %s", event["id"], event)
         mqtt_client.publish(TOPIC, json.dumps(event), qos=1)
-    time.sleep(os.environ.get('SLEEP_TIME', 60))
+    time.sleep(os.environ.get("SLEEP_TIME", 60))
