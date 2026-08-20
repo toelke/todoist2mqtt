@@ -59,6 +59,31 @@ class EventGetter:
         self._logger = logger.getChild("EventGetter")
         self._data = shelve.open("eventgetter_shelve")
 
+    def _get_activities(self):
+        response = session.get("https://api.todoist.com/api/v1/activities", timeout=30)
+        if not response.ok:
+            self._logger.error(
+                "Activities request failed: HTTP %s %s (content-type %s): %s",
+                response.status_code,
+                response.reason,
+                response.headers.get("Content-Type", "<none>"),
+                response.text[:500],
+            )
+            response.raise_for_status()
+        try:
+            return response.json()
+        except requests.exceptions.JSONDecodeError:
+            self._logger.exception(
+                "Could not decode activities response as JSON: "
+                "HTTP %s %s (content-type %s, %d bytes): %s",
+                response.status_code,
+                response.reason,
+                response.headers.get("Content-Type", "<none>"),
+                len(response.content),
+                response.text[:500],
+            )
+            raise
+
     def get_events(self):
         is_first_start = "last_event_id" not in self._data
         cutoff = (
@@ -67,7 +92,7 @@ class EventGetter:
             else None
         )
         last_seen = self._data.get("last_event_id", -1)
-        activity = session.get("https://api.todoist.com/api/v1/activities").json()
+        activity = self._get_activities()
         try:
             results = activity["results"]
         except KeyError:
@@ -86,8 +111,12 @@ class EventGetter:
 
 
 eg = EventGetter()
+sleep_time = int(os.environ.get("SLEEP_TIME", "60"))
 while True:
-    for event in eg.get_events():
-        logger.info("Publishing event %d %s", event["id"], event)
-        mqtt_client.publish(TOPIC, json.dumps(event), qos=1)
-    time.sleep(os.environ.get("SLEEP_TIME", 60))
+    try:
+        for event in eg.get_events():
+            logger.info("Publishing event %d %s", event["id"], event)
+            mqtt_client.publish(TOPIC, json.dumps(event), qos=1)
+    except (requests.exceptions.RequestException, KeyError):
+        logger.exception("Fetching events failed, retrying in %d seconds", sleep_time)
+    time.sleep(sleep_time)
